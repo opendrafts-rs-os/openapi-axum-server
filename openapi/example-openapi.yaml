@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: Sample API
+  version: 1.0.0
+paths:
+  /hello:
+    get:
+      summary: Returns a greeting
+      responses:
+        '200':
+          description: A JSON object with a greeting message.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+#  /login:
+#    get:
+#      summary: Redirect to login page
+#      responses:
+#        '303':
+#          description: Redirect to external login page
+#          headers:
+#            Location:
+#              description: URL to redirect
+#              schema:
+#                type: string
+  /callback:
+    get:
+      summary: Auth0 callback endpoint
+      description: Handles the Auth0 redirect after authentication and exchanges the authorization code for tokens.
+      parameters:
+        - name: code
+          in: query
+          required: true
+          description: Authorization code returned by Auth0.
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          description: State parameter to prevent CSRF attacks.
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirects the user to the application after successful authentication.
+        '400':
+          description: Bad request, missing or invalid parameters.
+        '500':
+          description: Server error during token exchange.
+
+  /logout:
+    get:
+      summary: User logout (redirect to Auth0 logout)
+      description: Logs out the user by redirecting to Auth0's logout endpoint and optionally returning to a specified URL.
+      parameters:
+        - name: returnTo
+          in: query
+          required: false
+          description: URL to redirect the user after logout.
+          schema:
+            type: string
+            format: uri
+      responses:
+        '302':
+          description: Redirects the user to Auth0 for logout and then to the specified return URL.
+
+  /userinfo:
+    get:
+      summary: Get user information
+      description: Returns the authenticated user's profile information.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved user information.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sub:
+                    type: string
+                    description: Auth0 user ID.
+                    example: auth0|1234567890
+                  login:
+                    type: string
+                    example: johnd
+        '401':
+          description: Unauthorized, missing or invalid token.
+        '500':
+          description: Server error while retrieving user information.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
