@@ -16,17 +16,6 @@ paths:
                 properties:
                   message:
                     type: string
-#  /login:
-#    get:
-#      summary: Redirect to login page
-#      responses:
-#        '303':
-#          description: Redirect to external login page
-#          headers:
-#            Location:
-#              description: URL to redirect
-#              schema:
-#                type: string
   /callback:
     get:
       summary: Auth0 callback endpoint
