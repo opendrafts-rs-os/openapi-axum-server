@@ -17,6 +17,7 @@ conversion = [
 ]
 
 [dependencies]
+tower-http = { version = "0.6.2", features = ["fs"] }
 jsonwebtoken = "9"
 reqwest = { version = "0.12.15", features = ["json"] }
 rand = "0.8.5"

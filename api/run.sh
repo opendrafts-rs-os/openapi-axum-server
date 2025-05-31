@@ -3,6 +3,8 @@ set -o allexport
 source .env
 set +o allexport
 
+#../gui/build.sh
+
 cargo run \
   -- \
   --auth0-domain "$EXAMPLE_AUTH0_DOMAIN" \

@@ -11,3 +11,4 @@ sed -i '/^\[dependencies\]/a urlencoding = "2.1.3"' ../api/Cargo.toml
 sed -i '/^\[dependencies\]/a rand = "0.8.5"' ../api/Cargo.toml
 sed -i '/^\[dependencies\]/a reqwest = { version = "0.12.15", features = ["json"] }' ../api/Cargo.toml
 sed -i '/^\[dependencies\]/a jsonwebtoken = "9"' ../api/Cargo.toml
+sed -i '/^\[dependencies\]/a tower-http = { version = "0.6.2", features = ["fs"] }' ../api/Cargo.toml

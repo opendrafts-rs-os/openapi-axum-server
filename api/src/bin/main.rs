@@ -1,14 +1,14 @@
 
-use http::{header, HeaderMap, Method, StatusCode};
+use http::{Method, StatusCode};
 use axum_extra::extract::CookieJar;
-use axum::extract::{Host, Request};
+use axum::extract::{Host, Request, Query};
 use clap::Parser;
 use openapi::server;
-use openapi::apis::default::{CallbackGetResponse, Default, HelloGetResponse, LogoutGetResponse, UserinfoGetResponse};
-use openapi::models::{CallbackGetQueryParams, HelloGet200Response, LogoutGetQueryParams};
+use openapi::apis::default::{Default, HelloGetResponse, LogoutGetResponse, UserinfoGetResponse};
+use openapi::models::{HelloGet200Response, LogoutGetQueryParams, UserinfoGet200Response};
 use std::sync::OnceLock;
 use axum::middleware::Next;
-use axum::response::{Redirect,Response};
+use axum::response::{IntoResponse, Redirect, Response};
 use axum::{middleware, Router};
 use axum::body::Body;
 use axum::routing::get;
@@ -16,8 +16,10 @@ use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize};
 use reqwest::Client;
 use std::collections::HashMap;
+use axum_extra::extract::cookie::Cookie;
 use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation, TokenData};
 use serde_json::Value;
+
 
 #[derive(Parser, Debug)]
 #[command(name = "Auth0 CLI", about = "")]
@@ -34,6 +36,12 @@ struct ArgsAuth0 {
     auth0_response_type: String,
     #[arg(long)]
     auth0_scope: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CallbackQuery {
+    pub code: String,
+    //pub state: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -99,6 +107,63 @@ pub async fn login_get( _method: Method, _host: Host, _cookies: CookieJar) -> Re
         }
     };
     redirect
+}
+
+pub async fn callback_get(_method: Method, _host: Host, cookies: CookieJar, query_params: Query<CallbackQuery>) -> Response {
+    println!("query params: {:?}", query_params);
+    let affter_callback = "http://localhost:8080";
+    //if let Ok(res) =
+    match AUTH0.get() {
+        Some(auth_cfg) => {
+            let jwks = format!("https://{}/.well-known/jwks.json", &auth_cfg.auth0_domain);
+            match exchange_code_for_token(&query_params.code).await {
+                Ok(token_response) => {
+                    match decode_id_token_(&token_response.id_token, &jwks).await {
+                        Ok(_user_info) => {
+                            //let it = token_response.id_token.to_owned();
+                            println!("id ok");
+
+                            let cookie_at =
+                                Cookie::build((
+                                                    "DEMO_ACCESS_TOKEN",
+                                                    token_response.access_token.to_owned()))
+                                    .path("/")
+                                    .http_only(true)
+                                    .same_site(axum_extra::extract::cookie::SameSite::Lax)
+                                    .build();
+                            let cookie_it =
+                                Cookie::build((
+                                    "DEMO_ID_TOKEN",
+                                    token_response.id_token.to_owned()))
+                                    .path("/")
+                                    .http_only(true)
+                                    .same_site(axum_extra::extract::cookie::SameSite::Lax)
+                                    .build();
+
+                            println!("cookie ok");
+
+                            (cookies.add(cookie_at).add(cookie_it), Redirect::temporary(affter_callback)).into_response()
+                        },
+                        Err(err) => {
+                            eprintln!("Failed to decode ID token: {}", err);
+                            //Err("Failed to decode ID token".to_string());
+                            (cookies, Redirect::temporary(affter_callback)).into_response()
+                        }
+                    }
+                },
+                Err(err) => {
+                    eprintln!("Token exchange failed: {}", err);
+                    //Err(format!("Authentication failed: {}", err));
+                    (cookies, Redirect::temporary(affter_callback)).into_response()
+                }
+            }
+        }
+        None => {
+            eprintln!("Token exchange failed: problem with configuration");
+            //Err("Authentication failed: problem with configuration".to_string());
+            (cookies, Redirect::temporary(affter_callback)).into_response()
+        }
+    }
 }
 
 async fn exchange_code_for_token(code: &str) -> Result<TokenResponse, String> {
@@ -176,48 +241,15 @@ impl Default for MyApi {
         Ok(HelloGetResponse::Status200_AJSONObjectWithAGreetingMessage(hello))
     }
 
-    async fn callback_get(&self, _method: Method, _host: Host, _cookies: CookieJar, _query_params: CallbackGetQueryParams) -> Result<CallbackGetResponse, String> {
-        println!("query params: {:?}", _query_params);
-        match AUTH0.get() {
-            Some(auth_cfg) => {
-                let jwks = format!("https://{}/.well-known/jwks.json", &auth_cfg.auth0_domain);
-                match exchange_code_for_token(&_query_params.code).await {
-                    Ok(token_response) => {
-                        match decode_id_token_(&token_response.id_token, &jwks).await {
-                            Ok(user_info) => {
-                                // Create a cookie with the ID token
-                                let mut headers = HeaderMap::new();
-                                headers.insert(
-                                    header::SET_COOKIE,
-                                    format!("session_token={}; HttpOnly; Path=/;", token_response.id_token).parse().unwrap(),
-                                );
-
-                                println!("{:?}", &user_info);
-
-                                // For now, we'll return a redirect response as required by the API
-                                // In a real application, you might want to modify the API to return HTML
-                                Ok(CallbackGetResponse::Status302_RedirectsTheUserToTheApplicationAfterSuccessfulAuthentication)
-                            },
-                            Err(err) => {
-                                eprintln!("Failed to decode ID token: {}", err);
-                                Err("Failed to decode ID token".to_string())
-                            }
-                        }
-                    },
-                    Err(err) => {
-                        eprintln!("Token exchange failed: {}", err);
-                        Err(format!("Authentication failed: {}", err))
-                    }
-                }
-            }
-            None => {
-                eprintln!("Token exchange failed: problem with configuration");
-                Err("Authentication failed: problem with configuration".to_string())
-            }
-        }
-    }
     async fn userinfo_get(&self, _method: Method, _host: Host, _cookies: CookieJar) -> Result<UserinfoGetResponse, String> {
-        todo!()
+        let user_info = UserinfoGet200Response {
+            login: Some("test".to_string()),
+            sub: Some("subtest".to_string()),
+        };
+
+        let user = UserinfoGetResponse::Status200_SuccessfullyRetrievedUserInformation(user_info);
+        eprintln!("{:?}",&user);
+        Ok(user)
     }
     async fn logout_get(&self, _method: Method, _host: Host, _cookies: CookieJar, _query_params: LogoutGetQueryParams) -> Result<LogoutGetResponse, String> {
         todo!()
@@ -249,17 +281,20 @@ async fn main() {
 
     let app_open_api = server::new(api_impl);
 
-    let app_login = Router::new()
+    let app_auth = Router::new()
         .route("/login", get(|method, host, cookies| async move {
             login_get(method, host, cookies).await
+        }))
+        .route("/callback", get(|method, host, cookies, query_params | async move {
+            callback_get(method, host, cookies, query_params).await
         }));
 
     let app = Router::new()
         .merge(app_open_api)
-        .merge(app_login)
+        .merge(app_auth)
         .layer(middleware::from_fn(log_query_middleware::<Body>));
 
-    let listener = tokio::net::TcpListener::bind("localhost:3000")
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
         .unwrap();
     println!("listening on {}", listener.local_addr().unwrap());

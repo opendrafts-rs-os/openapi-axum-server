@@ -8,19 +8,6 @@ use crate::header;
 use crate::{models, types::*};
 
       
-    #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-    #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))] 
-    pub struct CallbackGetQueryParams {
-            /// Authorization code returned by Auth0.
-                #[serde(rename = "code")]
-                pub code: String,
-            /// State parameter to prevent CSRF attacks.
-                #[serde(rename = "state")]
-                #[serde(skip_serializing_if="Option::is_none")]
-                pub state: Option<String>,
-    }
-
-      
       
     #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
     #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))] 

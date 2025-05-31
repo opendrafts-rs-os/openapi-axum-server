@@ -10,20 +10,6 @@ use crate::{models, types::*};
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[must_use]
 #[allow(clippy::large_enum_variant)]
-pub enum CallbackGetResponse {
-    /// Redirects the user to the application after successful authentication.
-    Status302_RedirectsTheUserToTheApplicationAfterSuccessfulAuthentication
-    ,
-    /// Bad request, missing or invalid parameters.
-    Status400_BadRequest
-    ,
-    /// Server error during token exchange.
-    Status500_ServerErrorDuringTokenExchange
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-#[must_use]
-#[allow(clippy::large_enum_variant)]
 pub enum HelloGetResponse {
     /// A JSON object with a greeting message.
     Status200_AJSONObjectWithAGreetingMessage
@@ -58,17 +44,6 @@ pub enum UserinfoGetResponse {
 #[async_trait]
 #[allow(clippy::ptr_arg)]
 pub trait Default {
-    /// Auth0 callback endpoint.
-    ///
-    /// CallbackGet - GET /callback
-    async fn callback_get(
-    &self,
-    method: Method,
-    host: Host,
-    cookies: CookieJar,
-      query_params: models::CallbackGetQueryParams,
-    ) -> Result<CallbackGetResponse, String>;
-
     /// Returns a greeting.
     ///
     /// HelloGet - GET /hello

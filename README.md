@@ -3,17 +3,27 @@ Example: Generating a Rust Server with the OpenAPI Generator "rust-axum"
 
 # Project Usage Guide
 
-## Run
-
-```bash
-cd ./api
-./run.sh
-````
+## 
 
 ### Generate
 ```
+cd openapi
 ./gen.sh
 ```
+
+### API 
+```bash
+cd ./api
+./run.sh
+```
+
+### GUI
+```bash
+cd ./gui
+./run.sh
+```
+
+
 
 ### Test Scenarios
 #### Login Flow
