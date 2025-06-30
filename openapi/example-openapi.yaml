@@ -63,26 +63,26 @@ paths:
 #              description: URL to redirect
 #              schema:
 #                type: string
-  /logout:
-    get:
-      summary: User logout (redirect to Auth0 logout)
-      description: Logs out the user by redirecting to Auth0's logout endpoint and optionally returning to a specified URL.
-      parameters:
-        - name: returnTo
-          in: query
-          required: false
-          description: URL to redirect the user after logout.
-          schema:
-            type: string
-            format: uri
-      responses:
-        '302':
-          description: Redirects the user to Auth0 for logout and then to the specified return URL.
+#  /logout:
+#    get:
+#      summary: User logout (redirect to Auth0 logout)
+#      description: Logs out the user by redirecting to Auth0's logout endpoint and optionally returning to a specified URL.
+#      parameters:
+#        - name: returnTo
+#          in: query
+#          required: false
+#          description: URL to redirect the user after logout.
+#          schema:
+#            type: string
+#            format: uri
+#      responses:
+#        '302':
+#          description: Redirects the user to Auth0 for logout and then to the specified return URL.
 
-  /userinfo:
+  /testauth:
     get:
-      summary: Get user information
-      description: Returns the authenticated user's profile information.
+      summary: Get test if I logged
+      description: Returns string test if user logged.
       security:
         - bearerAuth: []
       responses:

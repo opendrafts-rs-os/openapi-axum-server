@@ -24,9 +24,6 @@ where
         .route("/hello",
             get(hello_get::<I, A>)
         )
-        .route("/logout",
-            get(logout_get::<I, A>)
-        )
         .route("/userinfo",
             get(userinfo_get::<I, A>)
         )
@@ -97,77 +94,6 @@ where
                                                         StatusCode::INTERNAL_SERVER_ERROR
                                                       })).await.unwrap()?;
                                                   response.body(Body::from(body_content))
-                                                },
-                                            },
-                                            Err(_) => {
-                                                // Application code returned an error. This should not happen, as the implementation should
-                                                // return a valid response.
-                                                response.status(500).body(Body::empty())
-                                            },
-                                        };
-
-                                        resp.map_err(|e| { error!(error = ?e); StatusCode::INTERNAL_SERVER_ERROR })
-}
-
-
-#[tracing::instrument(skip_all)]
-fn logout_get_validation(
-  query_params: models::LogoutGetQueryParams,
-) -> std::result::Result<(
-  models::LogoutGetQueryParams,
-), ValidationErrors>
-{
-  query_params.validate()?;
-
-Ok((
-  query_params,
-))
-}
-/// LogoutGet - GET /logout
-#[tracing::instrument(skip_all)]
-async fn logout_get<I, A>(
-  method: Method,
-  host: Host,
-  cookies: CookieJar,
-  Query(query_params): Query<models::LogoutGetQueryParams>,
- State(api_impl): State<I>,
-) -> Result<Response, StatusCode>
-where
-    I: AsRef<A> + Send + Sync,
-    A: apis::default::Default,
-{
-
-      #[allow(clippy::redundant_closure)]
-      let validation = tokio::task::spawn_blocking(move ||
-    logout_get_validation(
-        query_params,
-    )
-  ).await.unwrap();
-
-  let Ok((
-    query_params,
-  )) = validation else {
-    return Response::builder()
-            .status(StatusCode::BAD_REQUEST)
-            .body(Body::from(validation.unwrap_err().to_string()))
-            .map_err(|_| StatusCode::BAD_REQUEST);
-  };
-
-  let result = api_impl.as_ref().logout_get(
-      method,
-      host,
-      cookies,
-        query_params,
-  ).await;
-
-  let mut response = Response::builder();
-
-  let resp = match result {
-                                            Ok(rsp) => match rsp {
-                                                apis::default::LogoutGetResponse::Status302_RedirectsTheUserToAuth
-                                                => {
-                                                  let mut response = response.status(302);
-                                                  response.body(Body::empty())
                                                 },
                                             },
                                             Err(_) => {

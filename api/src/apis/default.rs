@@ -19,14 +19,6 @@ pub enum HelloGetResponse {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[must_use]
 #[allow(clippy::large_enum_variant)]
-pub enum LogoutGetResponse {
-    /// Redirects the user to Auth0 for logout and then to the specified return URL.
-    Status302_RedirectsTheUserToAuth
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-#[must_use]
-#[allow(clippy::large_enum_variant)]
 pub enum UserinfoGetResponse {
     /// Successfully retrieved user information.
     Status200_SuccessfullyRetrievedUserInformation
@@ -53,17 +45,6 @@ pub trait Default {
     host: Host,
     cookies: CookieJar,
     ) -> Result<HelloGetResponse, String>;
-
-    /// User logout (redirect to Auth0 logout).
-    ///
-    /// LogoutGet - GET /logout
-    async fn logout_get(
-    &self,
-    method: Method,
-    host: Host,
-    cookies: CookieJar,
-      query_params: models::LogoutGetQueryParams,
-    ) -> Result<LogoutGetResponse, String>;
 
     /// Get user information.
     ///

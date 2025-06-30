@@ -17,6 +17,8 @@ conversion = [
 ]
 
 [dependencies]
+josekit = "0.10"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "env-filter"] }
 tower-http = { version = "0.6.2", features = ["fs"] }
 jsonwebtoken = "9"
 reqwest = { version = "0.12.15", features = ["json"] }
@@ -47,6 +49,7 @@ tokio = { version = "1", default-features = false, features = [
 tracing = { version = "0.1", features = ["attributes"] }
 uuid = { version = "1", features = ["serde"] }
 validator = { version = "0.18", features = ["derive"] }
+aes-gcm = "0.10"
 
 [dev-dependencies]
 tracing-subscriber = "0.3"

@@ -7,23 +7,6 @@ use validator::Validate;
 use crate::header;
 use crate::{models, types::*};
 
-      
-      
-    #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
-    #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))] 
-    pub struct LogoutGetQueryParams {
-            /// URL to redirect the user after logout.
-                #[serde(rename = "returnTo")]
-                #[serde(skip_serializing_if="Option::is_none")]
-                pub return_to: Option<String>,
-    }
-
-      
-
-
-
-
-
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct HelloGet200Response {
@@ -32,7 +15,6 @@ pub struct HelloGet200Response {
     pub message: Option<String>,
 
 }
-
 
 impl HelloGet200Response {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
