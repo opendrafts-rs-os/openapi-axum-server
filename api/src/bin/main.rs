@@ -206,20 +206,6 @@ async fn exchange_code_for_token(code: &str) -> Result<TokenResponse, String> {
     params.insert("audience", &auth0_config.auth0_audience);
     params.insert("scope", "openid profile email");
 
-    // curl --request POST \
-    // --url https://dev-iord0jalg17zkw36.eu.auth0.com/oauth/token \
-    // --header 'content-type: application/json' \
-    // --data '{
-    // "client_id":"SFYyLef5Lbq8c9D8UFRzeoWQN5gMZALN",
-    // "client_secret":"UZ_F-uNQLB9qGvnEufFpuNGh0D0RcZ6K7k8E_3zifsmzS2tXkomNGsjkYB_il48b",
-    // "audience":"https://auth01.local/api",
-    // "grant_type":"client_credentials"
-    // }'
-
-    //params.insert("scope", "openid profile email");
-    //debug!("audience: {}", &auth0_config.auth0_audience);
-    //params.insert("audience", &auth0_config.auth0_audience);
-
     let token_url = format!("https://{}/oauth/token", auth0_config.auth0_domain);
 
     let res = client
@@ -337,42 +323,6 @@ impl Default for MyApi {
                 let access_token = access_token.ok_or("Missing id token")?.value();
 
                 debug!("access token: {:?}", access_token);
-
-
-
-                // let access_claim = match decode_access_token(access_token, &jwks).await {
-                //     Ok(claim) => claim,
-                //     Err(e) => {
-                //         return Err(e.to_string())
-                //     }
-                // };
-                // debug!("AccessClaim: {:?}", access_claim);
-
-                // let key = "FXH44XySBH-qUIFMBdi_jX_-IeBQ_c65uCtrXmCcxr_RHokyY7jz6qp0LXi6BwW4";
-                //
-                // debug!("key: {:?}", key);
-                // assert_eq!(key.len(), 32, "Klucz musi mieć dokładnie 32 bajty");
-                //
-                // let decrypter = Dir.decrypter_from_bytes(&key).expect("Nie udało się utworzyć decryptora");
-                //
-                // let access_token =  access_token.ok_or("Missing access token")?.value();
-                // debug!("AccessToken: {:?}", access_token);
-                //
-                // let result = decode_with_decrypter(access_token.as_bytes(), &decrypter);
-                //
-                // match result {
-                //     Ok((payload, _header)) => {
-                //         let claims_map = payload.claims_set().clone(); // Clonuemy Map<String, Value>
-                //         let claims_json = serde_json::Value::Object(claims_map);
-                //         debug!("Claims: {:?}", claims_json);
-                //     }
-                //     Err(err) => {
-                //         eprintln!("❌ Błąd odszyfrowania JWT: {:?}", err);
-                //     }
-                // }
-
-                // to check exp
-                // to validate access token
             }
             _ => { }
         };
@@ -394,19 +344,11 @@ impl AsRef<MyApi> for MyApi {
     }
 }
 
-// async fn log_query_middleware<B>(req: Request<Body>, next: Next) -> Response {
-//     if let Some(query) = req.uri().query() {
-//         debug!("Incoming query params: {}", query);
-//     }
-//     next.run(req).await
-// }
-
 #[tokio::main]
 async fn main() {
 
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
-        //.with_span_events(FmtSpan::ENTER | FmtSpan::EXIT)
         .init();
 
     info!("App started");
@@ -430,7 +372,6 @@ async fn main() {
     let app = Router::new()
         .merge(app_open_api)
         .merge(app_auth);
-        //.layer(middleware::from_fn(log_query_middleware::<Body>));
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
