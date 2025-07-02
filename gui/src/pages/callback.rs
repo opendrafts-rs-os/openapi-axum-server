@@ -1,7 +1,7 @@
 use log::debug;
 use yew::prelude::*;
 use web_sys::Url;
-use crate::auth::{exchange_code_for_token, CLIENT_ID, DOMAIN, REDIRECT_URI};
+use crate::auth::{exchange_code_for_token, AUDIENCE, CLIENT_ID, DOMAIN, REDIRECT_URI};
 
 #[function_component(Callback)]
 pub fn callback() -> Html {
@@ -26,7 +26,7 @@ pub fn callback() -> Html {
 
             if let Some(code) = code {
                 wasm_bindgen_futures::spawn_local(async move {
-                    match exchange_code_for_token(&code, CLIENT_ID, DOMAIN, REDIRECT_URI).await {
+                    match exchange_code_for_token(&code, CLIENT_ID, DOMAIN, REDIRECT_URI, AUDIENCE).await {
                         Ok(token) => {
 
                             if let Some(storage) = web_sys::window()

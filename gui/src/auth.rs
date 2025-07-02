@@ -10,6 +10,7 @@ use serde::Deserialize;
 pub const CLIENT_ID: &str = env!("CLIENT_ID");
 pub const DOMAIN: &str = env!("DOMAIN");
 pub const REDIRECT_URI: &str = env!("REDIRECT_URI");
+pub const AUDIENCE: &str = env!("AUDIENCE");
 
 #[derive(Debug, Deserialize)]
 pub struct TokenResponse {
@@ -68,15 +69,22 @@ pub async fn exchange_code_for_token(
     client_id: &str,
     domain: &str,
     redirect_uri: &str,
+    audience: &str,
 ) -> Result<TokenResponse, String> {
     let verifier = web_sys::window()
         .and_then(|w| w.session_storage().ok().flatten())
         .and_then(|s| s.get_item("code_verifier").ok().flatten())
         .ok_or("missing code_verifier in sessionStorage")?;
 
+    let audience_url_encoding =  urlencoding::encode(audience);
+    let redirect_url_url_encoding = urlencoding::encode(redirect_uri);
     let body = format!(
-        "grant_type=authorization_code&client_id={client_id}&code={code}\
-        &redirect_uri={redirect_uri}&code_verifier={verifier}"
+        "grant_type=authorization_code\
+        &client_id={client_id}\
+        &code={code}\
+        &redirect_uri={redirect_url_url_encoding}\
+        &code_verifier={verifier}\
+        &audience={audience_url_encoding}",
     );
 
     let url = format!("https://{domain}/oauth/token");

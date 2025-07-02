@@ -25,6 +25,7 @@ web-sys = "0.3"
 log = "0.4"
 wasm-logger = "0.2"
 wasm-bindgen-futures = "0.4"
+urlencoding = "2.1.3"
 
 [build]
 dist = "dist"
