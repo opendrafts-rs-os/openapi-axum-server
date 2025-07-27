@@ -8,22 +8,12 @@ export RUST_LOG=DEBUG
 
 #../gui/build.sh
 
-#cargo run --quiet\
-#  -- \
-#  --auth0-domain "$EXAMPLE_AUTH0_DOMAIN" \
-#  --auth0-client-id "$EXAMPLE_CLIENT_ID" \
-#  --auth0-client-secret "$EXAMPLE_CLIENT_SECRET" \
-#  --auth0-redirect-uri "$EXAMPLE_REDIRECT_URI" \
-#  --auth0-response-type "$EXAMPLE_RESPONSE_TYPE" \
-#  --auth0-scope "$EXAMPLE_SCOPE" \
-#  --auth0_audience "$EXAMPLE_AUDIENCE"
-
 cargo run \
   -- \
-  --auth0-domain "$EXAMPLE_AUTH0_DOMAIN" \
-  --auth0-client-id "$EXAMPLE_CLIENT_ID" \
-  --auth0-client-secret "$EXAMPLE_CLIENT_SECRET" \
-  --auth0-redirect-uri "$EXAMPLE_REDIRECT_URI" \
-  --auth0-response-type "$EXAMPLE_RESPONSE_TYPE" \
-  --auth0-scope "$EXAMPLE_SCOPE" \
-  --auth0-audience "$EXAMPLE_AUDIENCE"
+  --auth0-domain "$AUTH0_DOMAIN" \
+  --auth0-client-id "$AUTH0_CLIENT_ID" \
+  --auth0-client-secret "$AUTH0_CLIENT_SECRET" \
+  --auth0-redirect-uri "$AUTH0_REDIRECT_URI" \
+  --auth0-scope "$AUTH0_SCOPE" \
+
+  # --auth0-response-type "$EXAMPLE_RESPONSE_TYPE" \

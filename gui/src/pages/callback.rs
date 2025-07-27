@@ -1,7 +1,9 @@
 use log::debug;
 use yew::prelude::*;
 use web_sys::Url;
-use crate::auth::{exchange_code_for_token, AUDIENCE, CLIENT_ID, DOMAIN, REDIRECT_URI};
+use crate::auth::{exchange_code_for_token,  AUTH0_CLIENT_ID, AUTH0_DOMAIN, AUTH0_REDIRECT_URI, AUTH0_AUDIENCE};
+use wasm_bindgen::JsCast;
+use web_sys::{HtmlDocument};
 
 #[function_component(Callback)]
 pub fn callback() -> Html {
@@ -17,25 +19,38 @@ pub fn callback() -> Html {
             let url = Url::new(&href).unwrap();
             let code = url.search_params().get("code");
 
-            debug!(" my: {:?}", CLIENT_ID);
-            debug!(" my: {:?}", DOMAIN);
-            debug!(" my: {:?}", REDIRECT_URI);
-            debug!(" my: {:?}", code);
+            debug!(" my client_id: {:?}", AUTH0_CLIENT_ID);
+            debug!(" my domain: {:?}", AUTH0_DOMAIN);
+            debug!(" my redirect_uri: {:?}", AUTH0_REDIRECT_URI);
+            debug!(" my audience: {:?}", AUTH0_AUDIENCE);
+            debug!(" my code : {:?}", code);
 
+            let verifier = web_sys::window()
+                .and_then(|w| w.document())
+                .and_then(|doc| {
+                    doc.dyn_ref::<HtmlDocument>()?.cookie().ok()
+                })
+                .and_then(|cookie_str| {
+                    cookie_str
+                        .split(';')
+                        .find_map(|entry| {
+                            let mut parts = entry.trim().splitn(2, '=');
+                            let key = parts.next()?;
+                            let value = parts.next()?;
+                            if key == "pkce_verifier" {
+                                Some(value.to_string())
+                            } else {
+                                None
+                            }
+                        })
+                }).unwrap();
 
+            debug!("code_verifier from cookie: {:?}", verifier);
 
             if let Some(code) = code {
                 wasm_bindgen_futures::spawn_local(async move {
-                    match exchange_code_for_token(&code, CLIENT_ID, DOMAIN, REDIRECT_URI, AUDIENCE).await {
+                    match exchange_code_for_token(&code, &verifier, AUTH0_CLIENT_ID, AUTH0_DOMAIN, AUTH0_REDIRECT_URI, AUTH0_AUDIENCE).await {
                         Ok(token) => {
-
-                            if let Some(storage) = web_sys::window()
-                                .and_then(|w| w.session_storage().ok().flatten())
-                            {
-                                let verifier = storage.get_item("code_verifier").ok().flatten();
-                                debug!("code_verifier found in callback: {:?}", verifier);
-                            }
-
                             let access_token = &token.access_token.clone();
                             let id_token = &token.id_token.clone();
 

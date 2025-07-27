@@ -16,68 +16,6 @@ paths:
                 properties:
                   message:
                     type: string
-#  /callback:
-#    get:
-#      summary: Auth0 callback endpoint
-#      description: Handles the Auth0 redirect after authentication and exchanges the authorization code for tokens.
-#      parameters:
-#        - name: code
-#          in: query
-#          required: true
-#          description: Authorization code returned by Auth0.
-#          schema:
-#            type: string
-#        - name: state
-#          in: query
-#          required: false
-#          description: State parameter to prevent CSRF attacks.
-#          schema:
-#            type: string
-#      responses:
-#        '302':
-#          description: Redirect after correct login
-#          headers:
-#            Location:
-#              description: URL redirect
-#              schema:
-#                type: string
-#            Set-Cookie:
-#              description: |
-#                HTTP cookies to store tokens on the client. Contains:
-#                - `access_token`: for authenticated requests
-#                - `id_token`: for identity verification
-#              schema:
-#                type: string
-#        '400':
-#          description: Bad request, missing or invalid parameters.
-#        '500':
-#          description: Server error during token exchange.
-#  /login:
-#    get:
-#      summary: Redirect to login page
-#      responses:
-#        '303':
-#          description: Redirect to external login page
-#          headers:
-#            Location:
-#              description: URL to redirect
-#              schema:
-#                type: string
-#  /logout:
-#    get:
-#      summary: User logout (redirect to Auth0 logout)
-#      description: Logs out the user by redirecting to Auth0's logout endpoint and optionally returning to a specified URL.
-#      parameters:
-#        - name: returnTo
-#          in: query
-#          required: false
-#          description: URL to redirect the user after logout.
-#          schema:
-#            type: string
-#            format: uri
-#      responses:
-#        '302':
-#          description: Redirects the user to Auth0 for logout and then to the specified return URL.
 
   /testauth:
     get:

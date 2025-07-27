@@ -19,10 +19,10 @@ pub enum HelloGetResponse {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[must_use]
 #[allow(clippy::large_enum_variant)]
-pub enum UserinfoGetResponse {
+pub enum TestauthGetResponse {
     /// Successfully retrieved user information.
     Status200_SuccessfullyRetrievedUserInformation
-    (models::UserinfoGet200Response)
+    (models::TestauthGet200Response)
     ,
     /// Unauthorized, missing or invalid token.
     Status401_Unauthorized
@@ -46,13 +46,13 @@ pub trait Default {
     cookies: CookieJar,
     ) -> Result<HelloGetResponse, String>;
 
-    /// Get user information.
+    /// Get test if I logged.
     ///
-    /// UserinfoGet - GET /userinfo
-    async fn userinfo_get(
+    /// TestauthGet - GET /testauth
+    async fn testauth_get(
     &self,
     method: Method,
     host: Host,
     cookies: CookieJar,
-    ) -> Result<UserinfoGetResponse, String>;
+    ) -> Result<TestauthGetResponse, String>;
 }

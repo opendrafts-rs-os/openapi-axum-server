@@ -15,3 +15,6 @@ sed -i '/^\[dependencies\]/a tower-http = { version = "0.6.2", features = ["fs"]
 sed -i '/^\[dependencies\]/a tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "env-filter"] }' ../api/Cargo.toml
 sed -i '/^\[dependencies\]/a josekit = "0.10"' ../api/Cargo.toml
 
+cd ../api
+grep -qxF ".env" .gitignore || echo ".env" >> .gitignore
+

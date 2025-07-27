@@ -73,3 +73,20 @@ If you don't want to have your app dual licensed, just remove one (or both) of t
 There are two empty spaces in the MIT license you need to fill out: `` and `Grzegorz Bylica <grzegorz.bylica@gmail.com>`.
 
 [trunk]: https://github.com/thedodd/trunk
+
+### env
+
+//bk
+DOMAIN=???.eu.auth0.com
+CLIENT_ID=???
+REDIRECT_URI=http://localhost:3000/callback
+RESPONSE_TYPE="token"
+SCOPE="openid"
+
+#RUST_BACKTRACE=1
+
+//gui
+DOMAIN
+CLIENT_ID
+REDIRECT_URI
+AUDIENCE

@@ -24,8 +24,8 @@ where
         .route("/hello",
             get(hello_get::<I, A>)
         )
-        .route("/userinfo",
-            get(userinfo_get::<I, A>)
+        .route("/testauth",
+            get(testauth_get::<I, A>)
         )
         .with_state(api_impl)
 }
@@ -108,7 +108,7 @@ where
 
 
 #[tracing::instrument(skip_all)]
-fn userinfo_get_validation(
+fn testauth_get_validation(
 ) -> std::result::Result<(
 ), ValidationErrors>
 {
@@ -116,9 +116,9 @@ fn userinfo_get_validation(
 Ok((
 ))
 }
-/// UserinfoGet - GET /userinfo
+/// TestauthGet - GET /testauth
 #[tracing::instrument(skip_all)]
-async fn userinfo_get<I, A>(
+async fn testauth_get<I, A>(
   method: Method,
   host: Host,
   cookies: CookieJar,
@@ -131,7 +131,7 @@ where
 
       #[allow(clippy::redundant_closure)]
       let validation = tokio::task::spawn_blocking(move ||
-    userinfo_get_validation(
+    testauth_get_validation(
     )
   ).await.unwrap();
 
@@ -143,7 +143,7 @@ where
             .map_err(|_| StatusCode::BAD_REQUEST);
   };
 
-  let result = api_impl.as_ref().userinfo_get(
+  let result = api_impl.as_ref().testauth_get(
       method,
       host,
       cookies,
@@ -153,7 +153,7 @@ where
 
   let resp = match result {
                                             Ok(rsp) => match rsp {
-                                                apis::default::UserinfoGetResponse::Status200_SuccessfullyRetrievedUserInformation
+                                                apis::default::TestauthGetResponse::Status200_SuccessfullyRetrievedUserInformation
                                                     (body)
                                                 => {
                                                   let mut response = response.status(200);
@@ -171,12 +171,12 @@ where
                                                       })).await.unwrap()?;
                                                   response.body(Body::from(body_content))
                                                 },
-                                                apis::default::UserinfoGetResponse::Status401_Unauthorized
+                                                apis::default::TestauthGetResponse::Status401_Unauthorized
                                                 => {
                                                   let mut response = response.status(401);
                                                   response.body(Body::empty())
                                                 },
-                                                apis::default::UserinfoGetResponse::Status500_ServerErrorWhileRetrievingUserInformation
+                                                apis::default::TestauthGetResponse::Status500_ServerErrorWhileRetrievingUserInformation
                                                 => {
                                                   let mut response = response.status(500);
                                                   response.body(Body::empty())
