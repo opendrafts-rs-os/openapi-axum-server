@@ -33,11 +33,11 @@ pub(crate) fn generate_code_challenge(verifier: &str) -> String {
 }
 
 pub fn login(client_id: &str, domain: &str, redirect_uri: &str) {
-    // let verifier = generate_code_verifier();
-    // let challenge = generate_code_challenge(&verifier);
+    let verifier = generate_code_verifier();
+    let challenge = generate_code_challenge(&verifier);
 
-    let verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
-    let challenge = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
+    //let verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
+    //let challenge = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
     log::debug!("Generated code_verifier: {}", verifier);
 
     if let Some(document) = window().and_then(|w| w.document()) {
