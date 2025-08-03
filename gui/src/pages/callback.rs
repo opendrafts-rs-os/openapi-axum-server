@@ -1,29 +1,26 @@
 use log::debug;
-use yew::prelude::*;
 use web_sys::Url;
-use crate::auth::{exchange_code_for_token,  AUTH0_CLIENT_ID, AUTH0_DOMAIN, AUTH0_REDIRECT_URI, AUTH0_AUDIENCE};
+use crate::auth::{exchange_code_for_token, AUTH0_CLIENT_ID, AUTH0_DOMAIN, AUTH0_REDIRECT_URI, AUTH0_AUDIENCE, AuthContext};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlDocument};
+use crate::app::Route;
+
+use yew::prelude::*;
+use yew_router::prelude::*;
 
 #[function_component(Callback)]
 pub fn callback() -> Html {
-    let access_token_state = use_state(|| None::<String>);
-    let id_token_state = use_state(|| None::<String>);
+
+    let auth_ctx = use_context::<AuthContext>().expect("err");
+
+    let navigator = use_navigator();
 
     {
-        let access_token_state = access_token_state.clone();
-        let id_token_state = id_token_state.clone();
         use_effect_with((), move |_| {
             let window = web_sys::window().unwrap();
             let href = window.location().href().unwrap();
             let url = Url::new(&href).unwrap();
             let code = url.search_params().get("code");
-
-            debug!(" my client_id: {:?}", AUTH0_CLIENT_ID);
-            debug!(" my domain: {:?}", AUTH0_DOMAIN);
-            debug!(" my redirect_uri: {:?}", AUTH0_REDIRECT_URI);
-            debug!(" my audience: {:?}", AUTH0_AUDIENCE);
-            debug!(" my code : {:?}", code);
 
             let verifier = web_sys::window()
                 .and_then(|w| w.document())
@@ -45,45 +42,33 @@ pub fn callback() -> Html {
                         })
                 }).unwrap();
 
-            debug!("code_verifier from cookie: {:?}", verifier);
-
             if let Some(code) = code {
                 wasm_bindgen_futures::spawn_local(async move {
                     match exchange_code_for_token(&code, &verifier, AUTH0_CLIENT_ID, AUTH0_DOMAIN, AUTH0_REDIRECT_URI, AUTH0_AUDIENCE).await {
                         Ok(token) => {
                             let access_token = &token.access_token.clone();
-                            let id_token = &token.id_token.clone();
+                            let _id_token = &token.id_token.clone();
 
-                            access_token_state.set(Some(token.access_token));
-                            id_token_state.set(Some(token.id_token));
+                            auth_ctx.set_token(Some(access_token.clone()));
 
-                            if let Some(window) = web_sys::window() {
-                                if let Ok(Some(storage)) = window.session_storage() {
-                                    let _ = storage.set_item("access_token", access_token);
-                                    let _ = storage.set_item("id_token", id_token);
-                                }
+                            if let Some(nav) = navigator {
+                                nav.push(&Route::Home);
+                            } else {
+                                debug!("No navigator");
                             }
-
                         },
                         Err(e) => log::error!("Err: {}", e),
                     }
                 });
             }
-
             || ()
         });
     }
 
     html! {
         <>
-            <h1>{ "Callback Auth0" }</h1>
-            {
-                if access_token_state.is_some() {
-                    html! { <p>{ "I'm logged" }</p> }
-                } else {
-                    html! { <p>{ "Logowanie..." }</p> }
-                }
-            }
+            <p>{"Redirecting..."}</p>
+
         </>
     }
 }

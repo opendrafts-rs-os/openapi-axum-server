@@ -3,23 +3,34 @@ use rand::Rng;
 use sha2::{Digest, Sha256};
 
 use gloo_net::http::Request;
-use log::debug;
-use serde::Deserialize;
 use wasm_bindgen::JsCast;
 use web_sys::{window};
+use yew::UseStateHandle;
 
 pub const AUTH0_CLIENT_ID: &str = env!("AUTH0_CLIENT_ID");
 pub const AUTH0_DOMAIN: &str = env!("AUTH0_DOMAIN");
 pub const AUTH0_REDIRECT_URI: &str = env!("AUTH0_REDIRECT_URI");
 pub const AUTH0_AUDIENCE: &str = env!("AUTH0_AUDIENCE");
+pub const AUTH0_LOGOUT_REDIRECT_URI: &str = env!("AUTH0_LOGOUT_REDIRECT_URI");
 
 #[derive(serde::Deserialize, Debug)]
 pub struct TokenResponse {
     pub access_token: String,
     pub id_token: String,
-    pub expires_in: u64,
-    pub token_type: String,
-    pub scope: Option<String>,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct AuthContext {
+    pub token: UseStateHandle<Option<String>>,
+}
+
+impl AuthContext {
+    pub fn is_sing_in(&self) -> bool {
+        self.token.is_some()
+    }
+    pub fn set_token(&self, value: Option<String>) {
+        self.token.set(value);
+    }
 }
 
 pub(crate) fn generate_code_verifier() -> String {
@@ -36,17 +47,12 @@ pub fn login(client_id: &str, domain: &str, redirect_uri: &str) {
     let verifier = generate_code_verifier();
     let challenge = generate_code_challenge(&verifier);
 
-    //let verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
-    //let challenge = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
-    log::debug!("Generated code_verifier: {}", verifier);
-
     if let Some(document) = window().and_then(|w| w.document()) {
         let cookie_str = format!(
             "pkce_verifier={}; Path=/; Max-Age=300; SameSite=Lax",
             verifier
         );
 
-        // `cookie` jest property na `document`
         document
             .dyn_ref::<web_sys::HtmlDocument>()
             .expect("Should be an HtmlDocument")
@@ -56,12 +62,13 @@ pub fn login(client_id: &str, domain: &str, redirect_uri: &str) {
             });
     }
 
-
     let url = format!(
         "https://{domain}/authorize?response_type=code\
          &client_id={client_id}&redirect_uri={redirect_uri}\
          &scope=openid%20name%20email%20nickname\
-         &code_challenge={challenge}&code_challenge_method=S256"
+         &code_challenge={challenge}&code_challenge_method=S256\
+         &audience={audience}",
+        audience = AUTH0_AUDIENCE,
     );
 
     if let Some(window) = window() {
@@ -75,6 +82,21 @@ pub fn login(client_id: &str, domain: &str, redirect_uri: &str) {
     }
 }
 
+pub fn logout(client_id: &str, domain: &str, post_logout_redirect_uri: &str) {
+    let logout_url = format!(
+        "https://{domain}/v2/logout?client_id={client_id}&returnTo={redirect_uri}",
+        domain = domain,
+        client_id = client_id,
+        redirect_uri = urlencoding::encode(post_logout_redirect_uri),
+    );
+
+    web_sys::window()
+        .unwrap()
+        .location()
+        .set_href(&logout_url)
+        .unwrap();
+}
+
 pub async fn exchange_code_for_token(
     code: &str,
     verifier: &str,
@@ -83,6 +105,7 @@ pub async fn exchange_code_for_token(
     redirect_uri: &str,
     audience: &str,
 ) -> Result<TokenResponse, String> {
+
     let redirect_url_encoded = urlencoding::encode(redirect_uri);
     let audience_encoded = urlencoding::encode(audience);
 
@@ -96,7 +119,6 @@ pub async fn exchange_code_for_token(
         redirect_uri = redirect_url_encoded,
         audience = audience_encoded
     );
-    debug!("body: {}", body);
 
     let url = format!("https://{}/oauth/token", domain);
 
@@ -121,6 +143,5 @@ pub async fn exchange_code_for_token(
         .await
         .map_err(|e| format!("JSON parse error: {e}"))?;
 
-    debug!("{:?}", token);
     Ok(token)
 }
