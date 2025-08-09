@@ -10,19 +10,19 @@ use crate::{models, types::*};
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[must_use]
 #[allow(clippy::large_enum_variant)]
-pub enum HelloGetResponse {
+pub enum GetHelloResponse {
     /// A JSON object with a greeting message.
     Status200_AJSONObjectWithAGreetingMessage
-    (models::HelloGet200Response)
+    (models::GetHello200Response)
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[must_use]
 #[allow(clippy::large_enum_variant)]
-pub enum TestauthGetResponse {
+pub enum GetTestauthResponse {
     /// Successfully retrieved user information.
     Status200_SuccessfullyRetrievedUserInformation
-    (models::TestauthGet200Response)
+    (models::GetTestauth200Response)
     ,
     /// Unauthorized, missing or invalid token.
     Status401_Unauthorized
@@ -38,21 +38,21 @@ pub enum TestauthGetResponse {
 pub trait Default {
     /// Returns a greeting.
     ///
-    /// HelloGet - GET /hello
-    async fn hello_get(
+    /// GetHello - GET /hello
+    async fn get_hello(
     &self,
     method: Method,
     host: Host,
     cookies: CookieJar,
-    ) -> Result<HelloGetResponse, String>;
+    ) -> Result<GetHelloResponse, String>;
 
     /// Get test if I logged.
     ///
-    /// TestauthGet - GET /testauth
-    async fn testauth_get(
+    /// GetTestauth - GET /testauth
+    async fn get_testauth(
     &self,
     method: Method,
     host: Host,
     cookies: CookieJar,
-    ) -> Result<TestauthGetResponse, String>;
+    ) -> Result<GetTestauthResponse, String>;
 }

@@ -7,28 +7,36 @@ use validator::Validate;
 use crate::header;
 use crate::{models, types::*};
 
+      
+      
+
+
+
+
+
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct HelloGet200Response {
+pub struct GetHello200Response {
     #[serde(rename = "message")]
     #[serde(skip_serializing_if="Option::is_none")]
     pub message: Option<String>,
+
 }
 
 
-impl HelloGet200Response {
+impl GetHello200Response {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new() -> HelloGet200Response {
-        HelloGet200Response {
+    pub fn new() -> GetHello200Response {
+        GetHello200Response {
             message: None,
         }
     }
 }
 
-/// Converts the HelloGet200Response value to the Query Parameters representation (style=form, explode=false)
+/// Converts the GetHello200Response value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
-impl std::fmt::Display for HelloGet200Response {
+impl std::fmt::Display for GetHello200Response {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let params: Vec<Option<String>> = vec![
 
@@ -45,10 +53,10 @@ impl std::fmt::Display for HelloGet200Response {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a HelloGet200Response value
+/// Converts Query Parameters representation (style=form, explode=false) to a GetHello200Response value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
-impl std::str::FromStr for HelloGet200Response {
+impl std::str::FromStr for GetHello200Response {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
@@ -68,7 +76,7 @@ impl std::str::FromStr for HelloGet200Response {
         while key_result.is_some() {
             let val = match string_iter.next() {
                 Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing HelloGet200Response".to_string())
+                None => return std::result::Result::Err("Missing value while parsing GetHello200Response".to_string())
             };
 
             if let Some(key) = key_result {
@@ -76,7 +84,7 @@ impl std::str::FromStr for HelloGet200Response {
                 match key {
                     #[allow(clippy::redundant_clone)]
                     "message" => intermediate_rep.message.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing HelloGet200Response".to_string())
+                    _ => return std::result::Result::Err("Unexpected key while parsing GetHello200Response".to_string())
                 }
             }
 
@@ -85,40 +93,40 @@ impl std::str::FromStr for HelloGet200Response {
         }
 
         // Use the intermediate representation to return the struct
-        std::result::Result::Ok(HelloGet200Response {
+        std::result::Result::Ok(GetHello200Response {
             message: intermediate_rep.message.into_iter().next(),
         })
     }
 }
 
-// Methods for converting between header::IntoHeaderValue<HelloGet200Response> and HeaderValue
+// Methods for converting between header::IntoHeaderValue<GetHello200Response> and HeaderValue
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<HelloGet200Response>> for HeaderValue {
+impl std::convert::TryFrom<header::IntoHeaderValue<GetHello200Response>> for HeaderValue {
     type Error = String;
 
-    fn try_from(hdr_value: header::IntoHeaderValue<HelloGet200Response>) -> std::result::Result<Self, Self::Error> {
+    fn try_from(hdr_value: header::IntoHeaderValue<GetHello200Response>) -> std::result::Result<Self, Self::Error> {
         let hdr_value = hdr_value.to_string();
         match HeaderValue::from_str(&hdr_value) {
              std::result::Result::Ok(value) => std::result::Result::Ok(value),
              std::result::Result::Err(e) => std::result::Result::Err(
-                 format!("Invalid header value for HelloGet200Response - value: {} is invalid {}",
+                 format!("Invalid header value for GetHello200Response - value: {} is invalid {}",
                      hdr_value, e))
         }
     }
 }
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<HelloGet200Response> {
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<GetHello200Response> {
     type Error = String;
 
     fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
         match hdr_value.to_str() {
              std::result::Result::Ok(value) => {
-                    match <HelloGet200Response as std::str::FromStr>::from_str(value) {
+                    match <GetHello200Response as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
                         std::result::Result::Err(err) => std::result::Result::Err(
-                            format!("Unable to convert header value '{}' into HelloGet200Response - {}",
+                            format!("Unable to convert header value '{}' into GetHello200Response - {}",
                                 value, err))
                     }
              },
@@ -137,7 +145,7 @@ impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<HelloGet200R
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, validator::Validate)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
-pub struct TestauthGet200Response {
+pub struct GetTestauth200Response {
 /// Auth0 user ID.
     #[serde(rename = "sub")]
     #[serde(skip_serializing_if="Option::is_none")]
@@ -150,20 +158,20 @@ pub struct TestauthGet200Response {
 }
 
 
-impl TestauthGet200Response {
+impl GetTestauth200Response {
     #[allow(clippy::new_without_default, clippy::too_many_arguments)]
-    pub fn new() -> TestauthGet200Response {
-        TestauthGet200Response {
+    pub fn new() -> GetTestauth200Response {
+        GetTestauth200Response {
             sub: None,
             login: None,
         }
     }
 }
 
-/// Converts the TestauthGet200Response value to the Query Parameters representation (style=form, explode=false)
+/// Converts the GetTestauth200Response value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
-impl std::fmt::Display for TestauthGet200Response {
+impl std::fmt::Display for GetTestauth200Response {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let params: Vec<Option<String>> = vec![
 
@@ -188,10 +196,10 @@ impl std::fmt::Display for TestauthGet200Response {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a TestauthGet200Response value
+/// Converts Query Parameters representation (style=form, explode=false) to a GetTestauth200Response value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
-impl std::str::FromStr for TestauthGet200Response {
+impl std::str::FromStr for GetTestauth200Response {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
@@ -212,7 +220,7 @@ impl std::str::FromStr for TestauthGet200Response {
         while key_result.is_some() {
             let val = match string_iter.next() {
                 Some(x) => x,
-                None => return std::result::Result::Err("Missing value while parsing TestauthGet200Response".to_string())
+                None => return std::result::Result::Err("Missing value while parsing GetTestauth200Response".to_string())
             };
 
             if let Some(key) = key_result {
@@ -222,7 +230,7 @@ impl std::str::FromStr for TestauthGet200Response {
                     "sub" => intermediate_rep.sub.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
                     #[allow(clippy::redundant_clone)]
                     "login" => intermediate_rep.login.push(<String as std::str::FromStr>::from_str(val).map_err(|x| x.to_string())?),
-                    _ => return std::result::Result::Err("Unexpected key while parsing TestauthGet200Response".to_string())
+                    _ => return std::result::Result::Err("Unexpected key while parsing GetTestauth200Response".to_string())
                 }
             }
 
@@ -231,41 +239,41 @@ impl std::str::FromStr for TestauthGet200Response {
         }
 
         // Use the intermediate representation to return the struct
-        std::result::Result::Ok(TestauthGet200Response {
+        std::result::Result::Ok(GetTestauth200Response {
             sub: intermediate_rep.sub.into_iter().next(),
             login: intermediate_rep.login.into_iter().next(),
         })
     }
 }
 
-// Methods for converting between header::IntoHeaderValue<TestauthGet200Response> and HeaderValue
+// Methods for converting between header::IntoHeaderValue<GetTestauth200Response> and HeaderValue
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<header::IntoHeaderValue<TestauthGet200Response>> for HeaderValue {
+impl std::convert::TryFrom<header::IntoHeaderValue<GetTestauth200Response>> for HeaderValue {
     type Error = String;
 
-    fn try_from(hdr_value: header::IntoHeaderValue<TestauthGet200Response>) -> std::result::Result<Self, Self::Error> {
+    fn try_from(hdr_value: header::IntoHeaderValue<GetTestauth200Response>) -> std::result::Result<Self, Self::Error> {
         let hdr_value = hdr_value.to_string();
         match HeaderValue::from_str(&hdr_value) {
              std::result::Result::Ok(value) => std::result::Result::Ok(value),
              std::result::Result::Err(e) => std::result::Result::Err(
-                 format!("Invalid header value for TestauthGet200Response - value: {} is invalid {}",
+                 format!("Invalid header value for GetTestauth200Response - value: {} is invalid {}",
                      hdr_value, e))
         }
     }
 }
 
 #[cfg(feature = "server")]
-impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<TestauthGet200Response> {
+impl std::convert::TryFrom<HeaderValue> for header::IntoHeaderValue<GetTestauth200Response> {
     type Error = String;
 
     fn try_from(hdr_value: HeaderValue) -> std::result::Result<Self, Self::Error> {
         match hdr_value.to_str() {
              std::result::Result::Ok(value) => {
-                    match <TestauthGet200Response as std::str::FromStr>::from_str(value) {
+                    match <GetTestauth200Response as std::str::FromStr>::from_str(value) {
                         std::result::Result::Ok(value) => std::result::Result::Ok(header::IntoHeaderValue(value)),
                         std::result::Result::Err(err) => std::result::Result::Err(
-                            format!("Unable to convert header value '{}' into TestauthGet200Response - {}",
+                            format!("Unable to convert header value '{}' into GetTestauth200Response - {}",
                                 value, err))
                     }
              },

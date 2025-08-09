@@ -3,6 +3,8 @@ set -o allexport
 source .env
 set +o allexport
 
+cd ./gui
+
 trunk serve \
    --release \
    --tls-cert-path ./certs/cert.pem \

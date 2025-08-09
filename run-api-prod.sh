@@ -8,6 +8,8 @@ export RUST_LOG=DEBUG
 
 #../gui/build.sh
 
+cd ./api
+
 cargo run \
   -- \
   --auth0-domain "$AUTH0_DOMAIN" \
@@ -15,5 +17,7 @@ cargo run \
   --auth0-client-secret "$AUTH0_CLIENT_SECRET" \
   --auth0-redirect-uri "$AUTH0_REDIRECT_URI" \
   --auth0-scope "$AUTH0_SCOPE" \
+  --auth0-jwks "$AUTH0_JWKS" \
+  --auth0-audience "$AUTH0_AUDIENCE"
 
   # --auth0-response-type "$EXAMPLE_RESPONSE_TYPE" \

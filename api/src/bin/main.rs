@@ -1,30 +1,69 @@
+use http::Method;
 
-use http::{Method};
+use axum::{
+    body::Body,
+    http::{
+        Request,
+        StatusCode,
+        header::{AUTHORIZATION},
+    }, response::Response, extract::Host, Router};
+use tower::{Layer, Service};
+
 use axum_extra::extract::CookieJar;
-use axum::extract::{Host, Query};
+
 use clap::Parser;
+
+use openapi::apis::default::{Default, GetHelloResponse, GetTestauthResponse};
+use openapi::models::{GetHello200Response, GetTestauth200Response};
 use openapi::server;
-use openapi::apis::default::{Default, HelloGetResponse, TestauthGetResponse};
-use openapi::models::{HelloGet200Response};
-use std::sync::OnceLock;
-use axum::response::{IntoResponse, Redirect, Response};
-use axum::{Router};
-use axum::routing::get;
-use rand::{distributions::Alphanumeric, Rng};
-use serde::{Deserialize, Serialize};
+
 use reqwest::Client;
-use std::collections::HashMap;
-use axum_extra::extract::cookie::Cookie;
-use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation, TokenData};
+
+use jsonwebtoken::{
+    decode,
+    decode_header,
+    Algorithm,
+    DecodingKey,
+    Validation,
+    TokenData
+};
+
 use serde_json::{Value};
-use tracing::{info, error, debug};
+use serde::{Deserialize, Serialize};
+
+use tracing::info;
 use tracing_subscriber;
 use tracing_subscriber::EnvFilter;
-use josekit::jwe::Dir;
-use josekit::jwt::decode_with_decrypter;
-use base64::Engine;
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
-use std::str;
+
+use std::{
+    str,
+    future::Future,
+    pin::Pin,
+    task::{Context, Poll},
+    sync::OnceLock,
+};
+
+#[derive(Clone)]
+pub struct AuthLayer {
+    pub public_paths: Vec<&'static str>,
+}
+
+impl<S> Layer<S> for AuthLayer {
+    type Service = AuthMiddleware<S>;
+
+    fn layer(&self, inner: S) -> Self::Service {
+        AuthMiddleware {
+            inner,
+            public_paths: self.public_paths.clone(),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct AuthMiddleware<S> {
+    inner: S,
+    public_paths: Vec<&'static str>,
+}
 
 #[derive(Parser, Debug)]
 #[command(name = "Auth0 CLI", about = "")]
@@ -39,23 +78,15 @@ struct ArgsAuth0 {
     auth0_redirect_uri: String,
     #[arg(long)]
     auth0_scope: String,
+    #[arg(long)]
+    auth0_audience: String,
+    #[arg(long)]
+    auth0_jwks: String,
 
 }
 
-#[derive(Debug, Deserialize)]
-pub struct CallbackQuery {
-    pub code: String,
-    //pub state: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct TokenResponse {
-    pub access_token: String,
-    pub id_token: String,
-    pub token_type: String,
-    pub expires_in: u64,
-}
-
+#[warn(private_interfaces)]
+#[warn(unused_variables)]
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
     pub sub: String,
@@ -67,27 +98,78 @@ struct Claims {
     pub scope: Option<String>,
 }
 
+impl<S, ReqBody> Service<Request<ReqBody>> for AuthMiddleware<S>
+where
+    S: Service<Request<ReqBody>, Response = Response> + Clone + Send + 'static,
+    S::Future: Send + 'static,
+    ReqBody: Send + 'static,
+{
+    type Response = Response;
+    type Error = S::Error;
+    type Future = Pin<Box<dyn Future<Output = Result<Response, S::Error>> + Send>>;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.inner.poll_ready(cx)
+    }
+
+    fn call(&mut self, req: Request<ReqBody>) -> Self::Future {
+        let path = req.uri().path().to_string();
+        let public_paths = self.public_paths.clone();
+        let mut inner = self.inner.clone();
+
+        let jwks_url = AUTH0
+            .get()
+            .map(|c| c.auth0_jwks.clone())
+            .unwrap_or_default();
+
+        Box::pin(async move {
+            if public_paths.iter().any(|p| path.starts_with(p)) {
+                return inner.call(req).await;
+            }
+
+
+            let auth_header = req
+                .headers()
+                .get(AUTHORIZATION)
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("");
+
+
+            if let Some(token) = auth_header.strip_prefix("Bearer ") {
+
+                match decode_access_token(token, &jwks_url).await {
+                    Ok(_td) => {
+
+                        return inner.call(req).await;
+                    }
+                    Err(_e) => {
+                        // fallthrough 401
+                    }
+                }
+            }
+
+            // 401
+            let resp = Response::builder()
+                .status(StatusCode::UNAUTHORIZED)
+                .body(Body::from("Unauthorized"))
+                .unwrap();
+            Ok(resp)
+        })
+    }
+}
+
 static AUTH0: OnceLock<ArgsAuth0> = OnceLock::new();
 
 #[derive(Clone)]
 struct MyApi;
 
-fn generate_random_string(len: usize) -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(len)
-        .map(char::from)
-        .collect()
-}
-
-pub async fn decode_access_token(token: &str, jwk_url: &str) -> Result<TokenData<Claims>, String> {
+async fn decode_access_token(token: &str, jwks_url: &str) -> Result<TokenData<Claims>, String> {
 
     let header = decode_header(token).map_err(|e| format!("Invalid token header: {}", e))?;
     let kid = header.kid.ok_or("Missing `kid` in token header")?;
 
-    let jwks_url = format!("https://{}/.well-known/jwks.json", jwk_url);
     let jwks: Value = Client::new()
-        .get(&jwks_url)
+        .get(jwks_url)
         .send().await.map_err(|e| e.to_string())?
         .json().await.map_err(|e| e.to_string())?;
 
@@ -111,18 +193,30 @@ pub async fn decode_access_token(token: &str, jwk_url: &str) -> Result<TokenData
 
 #[async_trait::async_trait]
 impl Default for MyApi {
-    async fn hello_get(
+    async fn get_hello(
         &self,
         _method: Method,
         _host: Host,
         _cookies: CookieJar,
-    ) -> Result<HelloGetResponse, String> {
-        let hello = HelloGet200Response { message: Some("hello".to_string()) };
-        info!("{:?}",hello);
-        Ok(HelloGetResponse::Status200_AJSONObjectWithAGreetingMessage(hello))
+    ) -> Result<GetHelloResponse, String> {
+        let body = GetHello200Response {
+            message: Some("hello".into()),
+        };
+        info!("{:?}",body);
+        Ok(GetHelloResponse::Status200_AJSONObjectWithAGreetingMessage(body))
     }
-    async fn testauth_get(&self, method: Method, host: Host, cookies: CookieJar) -> Result<TestauthGetResponse, String> {
-        todo!()
+
+    async fn get_testauth(
+        &self,
+        _method: Method,
+        _host: Host,
+        _cookies: CookieJar) -> Result<GetTestauthResponse, String> {
+        let body = GetTestauth200Response {
+            login: Some("test".into()),
+            sub: Some("test sub".into()),
+        };
+        info!("{:?}", body);
+        Ok(GetTestauthResponse::Status200_SuccessfullyRetrievedUserInformation(body))
     }
 }
 
@@ -134,6 +228,7 @@ impl AsRef<MyApi> for MyApi {
 
 #[tokio::main]
 async fn main() {
+
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .init();
@@ -143,14 +238,24 @@ async fn main() {
     AUTH0.set(args).unwrap();
 
     let api_impl = MyApi;
-    let app_open_api = server::new(api_impl);
+    let app_open_api: Router = server::new(api_impl);
+
+    let app = app_open_api.layer(AuthLayer {
+        public_paths: vec!["/hello", "/health"],
+    });
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
         .unwrap();
     info!("listening on {}", listener.local_addr().unwrap());
 
-    if let Err(e) = axum::serve(listener, app_open_api).await {
+    if let Err(e) = axum::serve(listener, app).await {
         info!("server error: {}", e);
     }
+
+    //TODO
+    // cache JWKS, leeway in time, (403, 401 ).
+    // production         Cache public kyes (JWKS)??
+    // logs metrics
+
 }

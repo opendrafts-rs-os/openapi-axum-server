@@ -11,18 +11,6 @@ cd openapi
 ./gen.sh
 ```
 
-### API 
-```bash
-cd ./api
-./run.sh
-```
-
-### GUI
-```bash
-cd ./gui
-./run.sh
-```
-
 
 
 ### Test Scenarios

@@ -22,17 +22,17 @@ where
     // build our application with a route
     Router::new()
         .route("/hello",
-            get(hello_get::<I, A>)
+            get(get_hello::<I, A>)
         )
         .route("/testauth",
-            get(testauth_get::<I, A>)
+            get(get_testauth::<I, A>)
         )
         .with_state(api_impl)
 }
 
 
 #[tracing::instrument(skip_all)]
-fn hello_get_validation(
+fn get_hello_validation(
 ) -> std::result::Result<(
 ), ValidationErrors>
 {
@@ -40,9 +40,9 @@ fn hello_get_validation(
 Ok((
 ))
 }
-/// HelloGet - GET /hello
+/// GetHello - GET /hello
 #[tracing::instrument(skip_all)]
-async fn hello_get<I, A>(
+async fn get_hello<I, A>(
   method: Method,
   host: Host,
   cookies: CookieJar,
@@ -55,7 +55,7 @@ where
 
       #[allow(clippy::redundant_closure)]
       let validation = tokio::task::spawn_blocking(move ||
-    hello_get_validation(
+    get_hello_validation(
     )
   ).await.unwrap();
 
@@ -67,7 +67,7 @@ where
             .map_err(|_| StatusCode::BAD_REQUEST);
   };
 
-  let result = api_impl.as_ref().hello_get(
+  let result = api_impl.as_ref().get_hello(
       method,
       host,
       cookies,
@@ -77,7 +77,7 @@ where
 
   let resp = match result {
                                             Ok(rsp) => match rsp {
-                                                apis::default::HelloGetResponse::Status200_AJSONObjectWithAGreetingMessage
+                                                apis::default::GetHelloResponse::Status200_AJSONObjectWithAGreetingMessage
                                                     (body)
                                                 => {
                                                   let mut response = response.status(200);
@@ -108,7 +108,7 @@ where
 
 
 #[tracing::instrument(skip_all)]
-fn testauth_get_validation(
+fn get_testauth_validation(
 ) -> std::result::Result<(
 ), ValidationErrors>
 {
@@ -116,9 +116,9 @@ fn testauth_get_validation(
 Ok((
 ))
 }
-/// TestauthGet - GET /testauth
+/// GetTestauth - GET /testauth
 #[tracing::instrument(skip_all)]
-async fn testauth_get<I, A>(
+async fn get_testauth<I, A>(
   method: Method,
   host: Host,
   cookies: CookieJar,
@@ -131,7 +131,7 @@ where
 
       #[allow(clippy::redundant_closure)]
       let validation = tokio::task::spawn_blocking(move ||
-    testauth_get_validation(
+    get_testauth_validation(
     )
   ).await.unwrap();
 
@@ -143,7 +143,7 @@ where
             .map_err(|_| StatusCode::BAD_REQUEST);
   };
 
-  let result = api_impl.as_ref().testauth_get(
+  let result = api_impl.as_ref().get_testauth(
       method,
       host,
       cookies,
@@ -153,7 +153,7 @@ where
 
   let resp = match result {
                                             Ok(rsp) => match rsp {
-                                                apis::default::TestauthGetResponse::Status200_SuccessfullyRetrievedUserInformation
+                                                apis::default::GetTestauthResponse::Status200_SuccessfullyRetrievedUserInformation
                                                     (body)
                                                 => {
                                                   let mut response = response.status(200);
@@ -171,12 +171,12 @@ where
                                                       })).await.unwrap()?;
                                                   response.body(Body::from(body_content))
                                                 },
-                                                apis::default::TestauthGetResponse::Status401_Unauthorized
+                                                apis::default::GetTestauthResponse::Status401_Unauthorized
                                                 => {
                                                   let mut response = response.status(401);
                                                   response.body(Body::empty())
                                                 },
-                                                apis::default::TestauthGetResponse::Status500_ServerErrorWhileRetrievingUserInformation
+                                                apis::default::GetTestauthResponse::Status500_ServerErrorWhileRetrievingUserInformation
                                                 => {
                                                   let mut response = response.status(500);
                                                   response.body(Body::empty())

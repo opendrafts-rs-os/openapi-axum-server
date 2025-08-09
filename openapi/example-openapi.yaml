@@ -5,6 +5,7 @@ info:
 paths:
   /hello:
     get:
+      operationId: hello
       summary: Returns a greeting
       responses:
         '200':
@@ -19,6 +20,7 @@ paths:
 
   /testauth:
     get:
+      operationId: testauth
       summary: Get test if I logged
       description: Returns string test if user logged.
       security:
