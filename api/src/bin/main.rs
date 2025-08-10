@@ -6,13 +6,15 @@ use axum::{
         Request,
         StatusCode,
         header::{AUTHORIZATION},
-    }, response::Response, extract::Host, Router};
+    },
+    response::Response,
+    extract::Host,
+    Router,
+    extract::Extension
+};
 use tower::{Layer, Service};
-
 use axum_extra::extract::CookieJar;
-
 use clap::Parser;
-
 use openapi::apis::default::{Default, GetHelloResponse, GetTestauthResponse};
 use openapi::models::{GetHello200Response, GetTestauth200Response};
 use openapi::server;
@@ -42,6 +44,7 @@ use std::{
     task::{Context, Poll},
     sync::OnceLock,
 };
+use std::collections::HashSet;
 
 #[derive(Clone)]
 pub struct AuthLayer {
@@ -69,34 +72,26 @@ pub struct AuthMiddleware<S> {
 #[command(name = "Auth0 CLI", about = "")]
 struct ArgsAuth0 {
     #[arg(long)]
-    auth0_domain: String,
-    #[arg(long)]
-    pub auth0_client_secret: String,
-    #[arg(long)]
-    auth0_client_id: String,
-    #[arg(long, default_value = "http://localhost:3000/callback")]
-    auth0_redirect_uri: String,
-    #[arg(long)]
-    auth0_scope: String,
-    #[arg(long)]
     auth0_audience: String,
     #[arg(long)]
     auth0_jwks: String,
-
 }
 
-#[warn(private_interfaces)]
-#[warn(unused_variables)]
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
     pub sub: String,
     pub iss: String,
-    pub aud: String,
+    pub aud: Value,
     pub exp: usize,
     pub iat: usize,
     pub azp: Option<String>,
     pub scope: Option<String>,
 }
+
+static AUTH0: OnceLock<ArgsAuth0> = OnceLock::new();
+
+#[derive(Clone)]
+struct MyApi;
 
 impl<S, ReqBody> Service<Request<ReqBody>> for AuthMiddleware<S>
 where
@@ -117,11 +112,6 @@ where
         let public_paths = self.public_paths.clone();
         let mut inner = self.inner.clone();
 
-        let jwks_url = AUTH0
-            .get()
-            .map(|c| c.auth0_jwks.clone())
-            .unwrap_or_default();
-
         Box::pin(async move {
             if public_paths.iter().any(|p| path.starts_with(p)) {
                 return inner.call(req).await;
@@ -137,9 +127,8 @@ where
 
             if let Some(token) = auth_header.strip_prefix("Bearer ") {
 
-                match decode_access_token(token, &jwks_url).await {
+                match verify_access_token(token, &*get_cfg().auth0_jwks, &*get_cfg().auth0_audience).await {
                     Ok(_td) => {
-
                         return inner.call(req).await;
                     }
                     Err(_e) => {
@@ -158,37 +147,52 @@ where
     }
 }
 
-static AUTH0: OnceLock<ArgsAuth0> = OnceLock::new();
+fn get_cfg() -> &'static ArgsAuth0 {
+    match AUTH0.get() {
+        Some(auth_cfg) => auth_cfg,
+        None => panic!("Auth0 config not initialized"),
+    }
+}
 
-#[derive(Clone)]
-struct MyApi;
-
-async fn decode_access_token(token: &str, jwks_url: &str) -> Result<TokenData<Claims>, String> {
+async fn verify_access_token(
+    token: &str,
+    jwks_url: &str,
+    expected_audience: &str,
+) -> Result<TokenData<Claims>, String> {
 
     let header = decode_header(token).map_err(|e| format!("Invalid token header: {}", e))?;
-    let kid = header.kid.ok_or("Missing `kid` in token header")?;
+    let kid = header.kid.ok_or_else(|| "Missing `kid` in token header".to_string())?;
 
     let jwks: Value = Client::new()
         .get(jwks_url)
         .send().await.map_err(|e| e.to_string())?
         .json().await.map_err(|e| e.to_string())?;
 
-    let keys = jwks["keys"].as_array().ok_or("No 'keys' in JWKS")?;
+    let keys = jwks["keys"].as_array().ok_or("No 'keys' in JWKS".to_string())?;
 
     let jwk = keys.iter().find(|k| k["kid"] == kid)
         .ok_or_else(|| "Matching JWK not found".to_string())?;
 
-    let n = jwk["n"].as_str().ok_or("Missing 'n'")?;
-    let e = jwk["e"].as_str().ok_or("Missing 'e'")?;
+    let n = jwk["n"].as_str().ok_or("Missing 'n'".to_string())?;
+    let e = jwk["e"].as_str().ok_or("Missing 'e'".to_string())?;
 
     let decoding_key = DecodingKey::from_rsa_components(n, e)
         .map_err(|e| format!("Invalid decoding key: {}", e))?;
 
-    decode::<Claims>(
+    let mut validation = Validation::new(Algorithm::RS256);
+
+    validation.aud = Some(HashSet::from([expected_audience.to_string()]));
+
+    let token_data = decode::<Claims>(
         token,
         &decoding_key,
-        &Validation::new(Algorithm::RS256),
-    ).map_err(|e| format!("Token validation failed: {}", e))
+        &validation,
+    ).map_err(|e| {
+        tracing::error!("Token validation failed: {}", e);
+        format!("Token validation failed: {}", e)
+    })?;
+
+    Ok(token_data)
 }
 
 #[async_trait::async_trait]
@@ -210,7 +214,8 @@ impl Default for MyApi {
         &self,
         _method: Method,
         _host: Host,
-        _cookies: CookieJar) -> Result<GetTestauthResponse, String> {
+        _cookies: CookieJar,
+        ) -> Result<GetTestauthResponse, String> {
         let body = GetTestauth200Response {
             login: Some("test".into()),
             sub: Some("test sub".into()),
@@ -257,5 +262,6 @@ async fn main() {
     // cache JWKS, leeway in time, (403, 401 ).
     // production         Cache public kyes (JWKS)??
     // logs metrics
-
+    // Integrate (prepare) error logs with SIEM and review regularly
+    // inject x-auth
 }
