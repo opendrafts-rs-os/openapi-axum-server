@@ -10,7 +10,6 @@ use axum::{
     response::Response,
     extract::Host,
     Router,
-    extract::Extension
 };
 use tower::{Layer, Service};
 use axum_extra::extract::CookieJar;
